@@ -1,0 +1,70 @@
+stages:
+  - build
+  - test
+  - report
+
+build-assignment:
+  stage: build
+  script:
+    - cp /data/GPUProg/SC/main.cpp src/main.cpp 
+    - cp /data/GPUProg/SC/GPUStreamCompactor.cu src/GPUStreamCompactor.cu 
+    - cp /data/GPUProg/SC/CPUStreamCompactor.h include/CPUStreamCompactor.h 
+    - cp /data/GPUProg/SC/CPUTimer.h include/CPUTimer.h 
+    - cp /data/GPUProg/SC/DataTypes.cuh include/DataTypes.cuh 
+    - cp /data/GPUProg/SC/GPUStreamCompactor.h include/GPUStreamCompactor.h 
+    - cp /data/GPUProg/SC/GPUTimer.cuh include/GPUTimer.cuh 
+    - cp /data/GPUProg/SC/Random.hpp include/Random.hpp 
+    - cp /data/GPUProg/SC/Utility.cuh include/Utility.cuh 
+    - mkdir build
+    - cd build
+    - cmake .. -DCC=86
+    - make clean
+    - make
+  tags:
+    - GPUProg
+  only:
+    - submission
+  artifacts:
+    paths:
+      - build/sc
+    expire_in: 2 h
+
+test-assignment:
+  stage: test
+  script:
+    - cp /data/GPUProg/copyResults_sc.py copyResults.py
+    - cp /data/GPUProg/timedprocess.py timedprocess.py
+    - cp /data/GPUProg/execute_sc.py execute.py
+    - cp /data/GPUProg/aggregateResultsAndPlot_sc.py aggregateResultsAndPlot.py
+    - python execute.py
+    - python copyResults.py /data/GPUProg/results results.csv
+    - python aggregateResultsAndPlot.py -folder /data/GPUProg/results -plotname plot.pdf
+  tags:
+    - GPUProg
+  only:
+    - submission
+  artifacts:
+    paths:
+      - results.csv
+      - plot.pdf
+      - perf_table.csv
+      - summary_plot.pdf
+      - memory_plot.pdf
+    expire_in: 2 h
+
+collect-all:
+  stage: report
+  script:
+    - echo
+  tags:
+    - GPUProg
+  only:
+    - submission
+  artifacts:
+    paths:
+      - results.csv
+      - plot.pdf
+      - perf_table.csv
+      - summary_plot.pdf
+      - memory_plot.pdf
+    expire_in: 30 d
