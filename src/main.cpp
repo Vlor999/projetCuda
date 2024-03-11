@@ -51,11 +51,12 @@ int main(int argc, char* argv[])
 
 	size_t runs = 3;
 	bool runCPU = true;
-	int num_elements = 10000000;
+	int num_elements = 1000000;
 	int seed = 0x1234;
 	int test = 0;
 	bool order_preserving = true;
 	bool inplace = false;
+	std::string testname = "";
 	try
 	{
 		if (argc > 1)
@@ -72,6 +73,8 @@ int main(int argc, char* argv[])
 			inplace = std::atoi(argv[6]) != 0;
 		if (argc > 7)
 			test = std::atoi(argv[7]);
+		if (argc > 8)
+			testname = argv[8];
 
 		std::string seed_string = std::to_string(seed);
 		std::cout << "Running Seed " << seed_string
@@ -119,7 +122,6 @@ int main(int argc, char* argv[])
 
 		// GPU.
 		std::cout << "Profiling " << runs << " run(s) on the GPU" << std::endl;
-		int failedRuns = 0;
 
 		DataType* d_input_original[2];
 		DataType* d_input;
@@ -138,6 +140,8 @@ int main(int argc, char* argv[])
 		GPUTimer gpu_timer(static_cast<int>(runs));
 		CPUTimer cpu_timer(static_cast<int>(runs));
 
+		std::vector<DataType> gpu_output[2] = { std::vector<DataType>(num_elements), std::vector<DataType>(num_elements) };
+
 		for (size_t i = 0; i < runs; ++i)
 		{
 			auto el = std::min<size_t>(i, 1);
@@ -149,13 +153,23 @@ int main(int argc, char* argv[])
 			gpu_timer.end();
 			cpu_timer.end();
 
-			// Evaluation.
+			// Store results to CPU.
 			if (i < 2 && runCPU)
 			{
 				DataType* d_output_to_copy = inplace ? d_input : d_output;
-				std::vector<DataType> gpu_output(num_elements);
-				HANDLE_ERROR(cudaMemcpy(gpu_output.data(), d_output_to_copy, gpu_output.size() * sizeof(DataType), cudaMemcpyDeviceToHost));
-				auto gpu_element_map = createElementList(gpu_output, gpu_element_count[el]);
+				HANDLE_ERROR(cudaMemcpy(gpu_output[el].data(), d_output_to_copy, gpu_output[el].size() * sizeof(DataType), cudaMemcpyDeviceToHost));
+			}
+		}
+
+		// Evaluation.
+		int failedRuns = 0;
+		for (size_t i = 0; i < runs; ++i)
+		{
+			// Evaluation.
+			if (i < 2 && runCPU)
+			{
+				auto el = std::min<size_t>(i, 1);
+				auto gpu_element_map = createElementList(gpu_output[el], gpu_element_count[el]);
 
 				if (cpu_element_count[i] != gpu_element_count[i])
 				{
@@ -168,7 +182,7 @@ int main(int argc, char* argv[])
 				{
 					for (size_t k = 0; k < cpu_element_count[i]; k++)
 					{
-						if (cpu_output[i][k] != gpu_output[k])
+						if (cpu_output[i][k] != gpu_output[el][k])
 						{
 							// ERROR: GPU does not match CPU elements!
 							failedRuns++;
@@ -215,8 +229,9 @@ int main(int argc, char* argv[])
 
 		// Write to output file
 		std::ofstream results_csv;
+		if (testname.empty()) testname = seed_string;
 		results_csv.open("results.csv", std::ios_base::app);
-		results_csv << seed_string << "," << gpures.mean_ << "," << temp_memory_size << "," << (failedRuns == 0 ? "1" : "0") << std::endl;
+		results_csv << testname << "," << gpures.mean_ << "," << temp_memory_size << "," << (failedRuns == 0 ? "1" : "0") << std::endl;
 		results_csv.close();
 	}
 	catch (std::exception& ex)
