@@ -17,7 +17,7 @@ build-assignment:
     - cp /data/GPUProg/SC/Utility.cuh include/Utility.cuh 
     - mkdir build
     - cd build
-    - cmake .. -DCC=86
+    - cmake .. -DCC=75
     - make clean
     - make
   tags:
