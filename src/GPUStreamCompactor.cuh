@@ -153,7 +153,7 @@ namespace GpuStreamCompactor
 		size_t cub_temp_storage_bytes = temp_size - (mem_ptr - reinterpret_cast<uint8_t*>(temp_memory));
 
         dim3 block_size(256, 1, 1); // [ligne de taille 256], pas de collone et pas de profondeur
-        dim3 blocks(divup<unsigned>(element_count, block_size.x), 1, 1);
+        dim3 blocks(divup<unsigned>(element_count, block_size.x), 1, 1); // We are cutting the array in blocks of 256 elements
 
 		// Start and stop events for info
         cudaEvent_t start, stop;
