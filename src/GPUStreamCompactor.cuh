@@ -40,7 +40,7 @@ __global__ void copyElements(const T* input, T* output, const uint32_t* state, c
 template<typename T>
 __global__ void copyElementsInPlaceOrdered(T* data, const uint32_t* state, const uint32_t* scan, uint32_t num_elements, uint32_t total_kept)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int index = blockIdx.x * blockDim.x + threadIdx.x; // boucle for convertie en thread
     if (index >= num_elements)
         return;
     
@@ -153,7 +153,7 @@ namespace GpuStreamCompactor
 		size_t cub_temp_storage_bytes = temp_size - (mem_ptr - reinterpret_cast<uint8_t*>(temp_memory));
 
         dim3 block_size(256, 1, 1); // [ligne de taille 256], pas de collone et pas de profondeur
-        dim3 blocks(divup<unsigned>(element_count, block_size.x), 1, 1);
+        dim3 blocks(divup<unsigned>(element_count, block_size.x), 1, 1); // We are cutting the array in blocks of 256 elements
 
 		// Start and stop events for info
         cudaEvent_t start, stop;
@@ -184,7 +184,7 @@ namespace GpuStreamCompactor
                 {
                     data_type* temp_buffer;
                     HANDLE_ERROR(cudaMalloc(&temp_buffer, element_count * sizeof(data_type)));
-                    HANDLE_ERROR(cudaMemcpy(temp_buffer, input, element_count * sizeof(data_type), cudaMemcpyDeviceToDevice));
+					HANDLE_ERROR(cudaMemcpy(temp_buffer, input, element_count * sizeof(data_type), cudaMemcpyDeviceToDevice)); // Deplacement des informations de input dans temp_buffer
 
                     copyElements<<<blocks, block_size>>>(temp_buffer, output, state, scan, element_count);
                     cudaDeviceSynchronize();
