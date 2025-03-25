@@ -184,7 +184,7 @@ namespace GpuStreamCompactor
                 {
                     data_type* temp_buffer;
                     HANDLE_ERROR(cudaMalloc(&temp_buffer, element_count * sizeof(data_type)));
-                    HANDLE_ERROR(cudaMemcpy(temp_buffer, input, element_count * sizeof(data_type), cudaMemcpyDeviceToDevice));
+					HANDLE_ERROR(cudaMemcpy(temp_buffer, input, element_count * sizeof(data_type), cudaMemcpyDeviceToDevice)); // Deplacement des informations de input dans temp_buffer
 
                     copyElements<<<blocks, block_size>>>(temp_buffer, output, state, scan, element_count);
                     cudaDeviceSynchronize();
