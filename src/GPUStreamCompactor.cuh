@@ -40,7 +40,7 @@ __global__ void copyElements(const T* input, T* output, const uint32_t* state, c
 template<typename T>
 __global__ void copyElementsInPlaceOrdered(T* data, const uint32_t* state, const uint32_t* scan, uint32_t num_elements, uint32_t total_kept)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int index = blockIdx.x * blockDim.x + threadIdx.x; // boucle for convertie en thread
     if (index >= num_elements)
         return;
     
